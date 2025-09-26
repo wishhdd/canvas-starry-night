@@ -28,9 +28,9 @@ export default function App() {
   const [liveStarRadius, setLiveStarRadius] = useState(committedStarRadius);
   const [liveMultipliers, setLiveMultipliers] = useState(committedMultipliers);
 
-  const [drawingStrategy, setDrawingStrategy] = useState<"naive" | "optimized">(
-    "optimized"
-  );
+  const [drawingStrategy, setDrawingStrategy] = useState<
+    "naive" | "path2d" | "optimized"
+  >("optimized");
   const [animationTrigger, setAnimationTrigger] = useState<"raf" | "event">(
     "raf"
   );
