@@ -76,6 +76,7 @@ export const Controls: React.FC<ControlsProps> = (props) => {
   const getButtonClassName = (strategy: DrawingStrategy | AnimationTrigger) => {
     if (strategy === drawingStrategy || strategy === animationTrigger) {
       if (strategy === "naive") return styles.activeNaive;
+      if (strategy === "path2d") return styles.activePath2D;
       if (strategy === "optimized") return styles.activeOptimized;
       if (strategy === "raf") return styles.activeRaf;
       if (strategy === "event") return styles.activeEvent;
@@ -96,7 +97,11 @@ export const Controls: React.FC<ControlsProps> = (props) => {
               📏 {committedFinalRadius}px
             </span>
             <span className={styles.collapsedInfoItem}>
-              {drawingStrategy === "optimized" ? "🚀 Опт." : "🐢 Наив."}
+              {drawingStrategy === "optimized"
+                ? "🚀 Опт."
+                : drawingStrategy === "path2d"
+                ? "📐 Path2D"
+                : "🐢 Наив."}
             </span>
             <span className={styles.collapsedInfoItem}>
               {animationTrigger === "raf" ? " rAF " : " Событие "}
@@ -254,7 +259,13 @@ export const Controls: React.FC<ControlsProps> = (props) => {
                 onClick={() => setDrawingStrategy("naive")}
                 className={`${styles.button} ${getButtonClassName("naive")}`}
               >
-                Наивная отрисовка
+                Наивная
+              </button>
+              <button
+                onClick={() => setDrawingStrategy("path2d")}
+                className={`${styles.button} ${getButtonClassName("path2d")}`}
+              >
+                Path2D
               </button>
               <button
                 onClick={() => setDrawingStrategy("optimized")}
@@ -308,7 +319,7 @@ export const Controls: React.FC<ControlsProps> = (props) => {
                 htmlFor="forceUniqueSprites"
                 className={styles.checkboxLabel}
               >
-                Перегрузить память (уникальный спрайт для звезды)
+                Перегрузить память
               </label>
               {showMemoryTooltip && (
                 <div className={styles.tooltip}>

@@ -1,6 +1,7 @@
 /**
  * Определяет стратегию отрисовки.
  * - `naive`: Отрисовка "в лоб" на каждом кадре.
- * - `optimized`: Использование техник кеширования.
+ * - `path2d`: Использование кешированных объектов Path2D.
+ * - `optimized`: Использование техник кеширования (offscreen canvas).
  */
-export type DrawingStrategy = "naive" | "optimized";
+export type DrawingStrategy = "naive" | "path2d" | "optimized";

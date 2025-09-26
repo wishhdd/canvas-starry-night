@@ -34,6 +34,7 @@ export class CanvasRendererEngine {
   #needsRedraw = true;
   #skyCache: HTMLCanvasElement | null = null;
   #spriteCache = new Map<string, HTMLCanvasElement>();
+  #path2dCache = new Map<string, Path2D>();
   #tracerPoints: Point[] = [];
   #mousePosition: Point = { x: -1, y: -1 };
   #animationFrameId: number | null = null;
@@ -76,6 +77,9 @@ export class CanvasRendererEngine {
   }
 
   #initializeCaches() {
+    this.#spriteCache.clear();
+    this.#path2dCache.clear();
+
     if (this.#drawingStrategy === "optimized") {
       if (
         !this.#skyCache ||
@@ -86,10 +90,7 @@ export class CanvasRendererEngine {
         this.#skyCache.width = this.#canvas.width;
         this.#skyCache.height = this.#canvas.height;
       }
-      this.#spriteCache.clear();
       this.#regenerateSkyCache();
-    } else {
-      this.#spriteCache.clear();
     }
     this.#needsRedraw = true;
   }
@@ -145,13 +146,7 @@ export class CanvasRendererEngine {
           drawPolygon(this.#ctx, star.x, star.y, currentRadius, 3);
           break;
         case "square":
-          this.#ctx.beginPath();
-          this.#ctx.rect(
-            star.x - currentRadius,
-            star.y - currentRadius,
-            currentRadius * 2,
-            currentRadius * 2
-          );
+          drawPolygon(this.#ctx, star.x, star.y, currentRadius, 4);
           break;
         case "pentagon":
           drawPolygon(this.#ctx, star.x, star.y, currentRadius, 5);
@@ -166,6 +161,65 @@ export class CanvasRendererEngine {
           break;
       }
       this.#ctx.fill();
+    }
+    this.#drawTracer();
+  }
+
+  #getOrCreatePath2D(radius: number, type: StarType): Path2D {
+    const key = `path-${radius}-${type}`;
+    if (this.#path2dCache.has(key)) {
+      return this.#path2dCache.get(key)!;
+    }
+
+    const path = new Path2D();
+    switch (type) {
+      case "triangle":
+        drawPolygon(path, 0, 0, radius, 3);
+        break;
+      case "square":
+        drawPolygon(path, 0, 0, radius, 4);
+        break;
+      case "pentagon":
+        drawPolygon(path, 0, 0, radius, 5);
+        break;
+      case "hexagon":
+        drawPolygon(path, 0, 0, radius, 6);
+        break;
+      case "circle":
+      default:
+        path.arc(0, 0, radius, 0, Math.PI * 2);
+        break;
+    }
+    this.#path2dCache.set(key, path);
+    return path;
+  }
+
+  #renderPath2D() {
+    this.#onDrawCall();
+    this.#ctx.clearRect(0, 0, this.#canvas.width, this.#canvas.height);
+
+    this.#stars.forEach((star) => {
+      if (star === this.#draggedStar) return;
+      const isHovered = star === this.#hoveredStar;
+      const currentRadius = isHovered ? star.radius * 2.5 : star.radius;
+      this.#ctx.fillStyle = isHovered ? STAR_HOVER_COLOR : star.color;
+
+      const path = this.#getOrCreatePath2D(currentRadius, star.type);
+      this.#ctx.save();
+      this.#ctx.translate(star.x, star.y);
+      this.#ctx.fill(path);
+      this.#ctx.restore();
+    });
+
+    if (this.#draggedStar) {
+      const star = this.#draggedStar;
+      const currentRadius = star.radius * 2.5;
+      this.#ctx.fillStyle = STAR_DRAG_COLOR;
+      const path = this.#getOrCreatePath2D(currentRadius, star.type);
+      this.#ctx.save();
+      this.#ctx.translate(star.x, star.y);
+      this.#ctx.fill(path);
+      this.#ctx.restore();
     }
     this.#drawTracer();
   }
@@ -292,11 +346,9 @@ export class CanvasRendererEngine {
 
     if (this.#needsRedraw) {
       const start = performance.now();
-      if (this.#drawingStrategy === "optimized") {
-        this.#renderOptimized();
-      } else {
-        this.#renderNaive();
-      }
+      if (this.#drawingStrategy === "optimized") this.#renderOptimized();
+      else if (this.#drawingStrategy === "path2d") this.#renderPath2D();
+      else this.#renderNaive();
       const end = performance.now();
       this.#onFrameRendered(end - start);
       this.#needsRedraw = false;
