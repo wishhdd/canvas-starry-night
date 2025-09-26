@@ -1,0 +1,10 @@
+.canvas {
+  border: 1px solid #374151;
+  background-color: #111827;
+  border-radius: 0.5rem;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}

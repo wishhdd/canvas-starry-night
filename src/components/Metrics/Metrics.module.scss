@@ -1,0 +1,106 @@
+.metricsContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 1rem;
+  align-self: flex-start;
+  width: 100%;
+  transition: all 0.3s ease-in-out;
+
+  &.metricsContainerCollapsed {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    width: auto;
+    align-self: flex-end;
+  }
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  width: 100%;
+
+  &.metricsGridCollapsed {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    width: auto;
+  }
+}
+
+.metricBox {
+  padding: 0.75rem;
+  background-color: #1F2937;
+  border-radius: 0.5rem;
+  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  transition: padding 0.3s ease-in-out;
+  gap: 4px;
+
+  &.metricBoxCollapsed {
+    padding: 0.5rem;
+    background-color: rgba(31, 41, 55, 0.8);
+  }
+}
+
+.metricValue {
+  font-family: monospace;
+  transition: font-size 0.3s ease-in-out;
+  font-size: 1.5rem;
+
+  &.metricValueLarge {
+    font-size: 1.875rem;
+  }
+
+  &.metricValueCollapsed {
+    font-size: 1rem;
+
+    &.metricValueLarge {
+      font-size: 1.25rem;
+    }
+  }
+}
+
+.green {
+  color: #4ade80;
+}
+
+.yellow {
+  color: #facc15;
+}
+
+.red {
+  color: #f87171;
+}
+
+
+.metricLabel {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  margin-top: 0.25rem;
+}
+
+.history {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.historyValue {
+  font-size: 0.9rem;
+  font-family: monospace;
+  color: #9CA3AF;
+
+
+}
+
+.historyValueCollapsed {
+  font-size: 0.8rem;
+  font-family: monospace;
+  color: #9CA3AF;
+}
