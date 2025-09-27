@@ -8,14 +8,12 @@
   width: 100%;
   transition: all 0.3s ease-in-out;
 
-  &.metricsContainerCollapsed {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    z-index: 10;
-    width: auto;
-    align-self: flex-end;
-  }
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+  width: auto;
+  align-self: flex-end;
 }
 
 .metricsGrid {

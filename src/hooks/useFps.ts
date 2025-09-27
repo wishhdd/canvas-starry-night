@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
  * Кастомный хук для измерения и отображения FPS (кадров в секунду).
  * @returns {number} - Текущее значение FPS.
  */
-export const useFps = () => {
+export const useFps = (): number => {
   const [fps, setFps] = useState(0);
   const frameCount = useRef(0);
   const lastTime = useRef(performance.now());

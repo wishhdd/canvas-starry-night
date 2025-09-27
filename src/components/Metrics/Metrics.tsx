@@ -1,176 +1,126 @@
-import React from "react";
+import { useEffect, useState } from "react";
+import { CanvasRendererEngine } from "../../core/CanvasRendererEngine";
+import { useDrawCounter } from "../../hooks/useDrawCounter";
+import { useFps } from "../../hooks/useFps";
 import styles from "./Metrics.module.scss";
 
-/**
- * Пропсы для компонента Metrics.
- */
 interface MetricsProps {
-  isOverlay?: boolean;
-  fps: number;
-  fpsHistory: number[];
-  drawsPerSecond: number;
-  drawsPerSecondHistory: number[];
-  frameTime: number;
-  frameTimeHistory: number[];
-  avgRenderTime: number;
-  avgRenderTimeHistory: number[];
+  engine: CanvasRendererEngine | null;
 }
 
-/**
- * Компонент для отображения метрик производительности.
- * Может отображаться в двух режимах: в основной панели или как оверлей.
- * @param {MetricsProps} props - Пропсы компонента.
- * @returns {JSX.Element | null}
- */
-export const Metrics: React.FC<MetricsProps> = (props) => {
-  const {
-    isOverlay,
-    fps,
-    fpsHistory,
-    drawsPerSecond,
-    drawsPerSecondHistory,
-    frameTime,
-    frameTimeHistory,
-    avgRenderTime,
-    avgRenderTimeHistory,
-  } = props;
+export function Metrics({ engine }: MetricsProps) {
+  const fps = useFps();
+  const { drawsPerSecond, increment } = useDrawCounter();
+  const [engineMetrics, setEngineMetrics] = useState({
+    frameTime: 0,
+    avgRenderTime: 0,
+  });
 
-  const getMetricValueColor = (value: number, thresholds: [number, number]) => {
-    if (value > thresholds[0]) return styles.green;
-    if (value > thresholds[1]) return styles.yellow;
-    return styles.red;
-  };
+  // Подключаем движок к хуку отрисовок
+  useEffect(() => {
+    if (!engine) return;
+
+    // Устанавливаем callback для увеличения счетчика
+    engine.onDraw = increment;
+
+    // Подписываемся на обновления метрик движка
+    const originalOnStateChange = engine.onStateChange;
+    engine.onStateChange = () => {
+      originalOnStateChange?.();
+      setEngineMetrics({
+        frameTime: engine.frameTime,
+        avgRenderTime: engine.avgRenderTime,
+      });
+    };
+
+    return () => {
+      engine.onDraw = null;
+      engine.onStateChange = originalOnStateChange;
+    };
+  }, [engine, increment]);
+
+  if (!engine) {
+    return null;
+  }
 
   return (
-    <div
-      className={`${styles.metricsContainer} ${
-        isOverlay ? styles.metricsContainerCollapsed : ""
-      }`}
-    >
-      <div
-        className={`${styles.metricsGrid} ${
-          isOverlay ? styles.metricsGridCollapsed : ""
-        }`}
-      >
-        <div
-          className={`${styles.metricBox} ${
-            isOverlay ? styles.metricBoxCollapsed : ""
-          }`}
-        >
-          <div style={{ textAlign: "left" }}>
+    <div className={styles.metricsContainer}>
+      <div className={styles.metricsGrid}>
+        {/* FPS из хука */}
+        <div className={styles.metricBox}>
+          <div className={styles.metricMain}>
             <div
-              className={`${styles.metricValue} ${
-                styles.metricValueLarge
-              } ${getMetricValueColor(fps, [50, 30])} ${
-                isOverlay ? styles.metricValueCollapsed : ""
-              }`}
+              className={styles.metricValue}
+              style={{
+                color: fps > 50 ? "#4ade80" : fps > 30 ? "#facc15" : "#f87171",
+              }}
             >
               {fps}
             </div>
-            <div className={styles.metricLabel}>FPS</div>
-          </div>
-          <div className={styles.history}>
-            {fpsHistory.map((val, index) => (
-              <span
-                key={index}
-                className={
-                  isOverlay ? styles.historyValueCollapsed : styles.historyValue
-                }
-              >
-                {val}
-              </span>
-            ))}
+            <div className={styles.metricLabel}>FPS (хук)</div>
           </div>
         </div>
-        <div
-          className={`${styles.metricBox} ${
-            isOverlay ? styles.metricBoxCollapsed : ""
-          }`}
-        >
-          <div style={{ textAlign: "left" }}>
+
+        {/* Отрисовки/сек из хука */}
+        <div className={styles.metricBox}>
+          <div className={styles.metricMain}>
             <div
-              className={`${styles.metricValue} ${
-                styles.metricValueLarge
-              } ${getMetricValueColor(drawsPerSecond, [58, 30])} ${
-                isOverlay ? styles.metricValueCollapsed : ""
-              }`}
+              className={styles.metricValue}
+              style={{
+                color:
+                  drawsPerSecond > 58
+                    ? "#4ade80"
+                    : drawsPerSecond > 30
+                    ? "#facc15"
+                    : "#f87171",
+              }}
             >
               {drawsPerSecond}
             </div>
-            <div className={styles.metricLabel}>Отрисовки / сек</div>
-          </div>
-          <div className={styles.history}>
-            {drawsPerSecondHistory.map((val, index) => (
-              <span
-                key={index}
-                className={
-                  isOverlay ? styles.historyValueCollapsed : styles.historyValue
-                }
-              >
-                {val}
-              </span>
-            ))}
+            <div className={styles.metricLabel}>Отрисовки/сек (хук)</div>
           </div>
         </div>
-        <div
-          className={`${styles.metricBox} ${
-            isOverlay ? styles.metricBoxCollapsed : ""
-          }`}
-        >
-          <div style={{ textAlign: "left" }}>
+
+        {/* Время кадра из движка */}
+        <div className={styles.metricBox}>
+          <div className={styles.metricMain}>
             <div
-              className={`${styles.metricValue} ${getMetricValueColor(
-                frameTime,
-                [16, 8]
-              )} ${isOverlay ? styles.metricValueCollapsed : ""}`}
+              className={styles.metricValue}
+              style={{
+                color:
+                  engineMetrics.frameTime < 8
+                    ? "#4ade80"
+                    : engineMetrics.frameTime < 16
+                    ? "#facc15"
+                    : "#f87171",
+              }}
             >
-              {frameTime.toFixed(2)}
+              {engineMetrics.frameTime.toFixed(2)}
             </div>
             <div className={styles.metricLabel}>Время кадра (ms)</div>
           </div>
-          <div className={styles.history}>
-            {frameTimeHistory.map((time, index) => (
-              <span
-                key={index}
-                className={
-                  isOverlay ? styles.historyValueCollapsed : styles.historyValue
-                }
-              >
-                {time.toFixed(2)}
-              </span>
-            ))}
-          </div>
         </div>
-        <div
-          className={`${styles.metricBox} ${
-            isOverlay ? styles.metricBoxCollapsed : ""
-          }`}
-        >
-          <div style={{ textAlign: "left" }}>
+
+        {/* Стоимость звезды из движка */}
+        <div className={styles.metricBox}>
+          <div className={styles.metricMain}>
             <div
-              className={`${styles.metricValue} ${getMetricValueColor(
-                avgRenderTime,
-                [2, 1]
-              )} ${isOverlay ? styles.metricValueCollapsed : ""}`}
+              className={styles.metricValue}
+              style={{
+                color:
+                  engineMetrics.avgRenderTime < 1
+                    ? "#4ade80"
+                    : engineMetrics.avgRenderTime < 2
+                    ? "#facc15"
+                    : "#f87171",
+              }}
             >
-              {avgRenderTime.toFixed(2)}
+              {engineMetrics.avgRenderTime.toFixed(2)}
             </div>
             <div className={styles.metricLabel}>Стоимость звезды (µs)</div>
-          </div>
-          <div className={styles.history}>
-            {avgRenderTimeHistory.map((val, index) => (
-              <span
-                key={index}
-                className={
-                  isOverlay ? styles.historyValueCollapsed : styles.historyValue
-                }
-              >
-                {val.toFixed(2)}
-              </span>
-            ))}
           </div>
         </div>
       </div>
     </div>
   );
-};
+}

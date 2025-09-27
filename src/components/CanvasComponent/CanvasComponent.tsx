@@ -1,62 +1,67 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { CanvasRendererEngine } from "../../core/CanvasRendererEngine";
-import type { Star } from "../../core/Star";
-import type { AnimationTrigger } from "../../types/animationTrigger";
-import type { DrawingStrategy } from "../../types/drawingStrategy";
 import styles from "./CanvasComponent.module.scss";
 
-/**
- * Пропсы для компонента CanvasComponent.
- */
-export interface CanvasProps {
-  stars: Star[];
-  drawingStrategy: DrawingStrategy;
-  animationTrigger: AnimationTrigger;
-  forceUniqueSprites: boolean;
-  showCometTrail: boolean;
-  width: number;
-  height: number;
-  onFrameRendered: (time: number) => void;
-  onDrawCall: () => void;
-  onInteraction: () => void;
+interface CanvasComponentProps {
+  engine: CanvasRendererEngine;
 }
 
-/**
- * React-компонент-обертка для Canvas.
- * Его основная задача - управлять жизненным циклом экземпляра CanvasRendererEngine
- * и передавать ему актуальные пропсы.
- * @param {CanvasProps} props - Пропсы компонента.
- * @returns {JSX.Element}
- */
-export const CanvasComponent: React.FC<CanvasProps> = (props) => {
+export function CanvasComponent({ engine }: CanvasComponentProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rendererRef = useRef<CanvasRendererEngine | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const isInitializedRef = useRef(false);
 
-  // Инициализация движка при монтировании компонента
   useEffect(() => {
-    if (canvasRef.current) {
-      rendererRef.current = new CanvasRendererEngine(canvasRef.current);
-      rendererRef.current.start();
+    if (isInitializedRef.current) return;
+
+    if (!canvasRef.current || !wrapperRef.current) {
+      return;
     }
-    return () => {
-      rendererRef.current?.stop();
-    };
-  }, []);
 
-  useEffect(() => {
-    rendererRef.current?.update(props);
-  }, [props]);
+    isInitializedRef.current = true;
+    console.log("🔵 CanvasComponent mounted - INITIALIZING");
+
+    const resizeCanvas = () => {
+      if (!wrapperRef.current || !canvasRef.current) return;
+
+      const rect = wrapperRef.current.getBoundingClientRect();
+      const width = Math.max(rect.width, 100);
+      const height = Math.max(rect.height, 100);
+
+      console.log("📏 Resizing canvas to:", width, "x", height);
+
+      canvasRef.current.width = width;
+      canvasRef.current.height = height;
+      engine.handleResize();
+    };
+
+    // Инициализация
+    engine.setCanvas(canvasRef.current);
+    resizeCanvas();
+    engine.start();
+
+    const observer = new ResizeObserver(resizeCanvas);
+    observer.observe(wrapperRef.current);
+    window.addEventListener("resize", resizeCanvas);
+
+    console.log(
+      "✅ CanvasComponent fully initialized with permanent listeners"
+    );
+    return () => {
+      console.log("🛑 CanvasComponent cleanup (IGNORED - listeners remain)");
+    };
+  }, [engine]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={props.width}
-      height={props.height}
-      className={styles.canvas}
-      onMouseDown={(e) => rendererRef.current?.handleMouseDown(e)}
-      onMouseUp={() => rendererRef.current?.handleMouseUp()}
-      onMouseMove={(e) => rendererRef.current?.handleMouseMove(e)}
-      onMouseLeave={() => rendererRef.current?.handleMouseLeave()}
-    />
+    <div ref={wrapperRef} className={styles.canvasWrapper}>
+      <canvas
+        ref={canvasRef}
+        className={styles.canvas}
+        onMouseDown={(e) => engine.handleMouseDown(e)}
+        onMouseUp={() => engine.handleMouseUp()}
+        onMouseMove={(e) => engine.handleMouseMove(e)}
+        onMouseLeave={() => engine.handleMouseLeave()}
+      />
+    </div>
   );
-};
+}

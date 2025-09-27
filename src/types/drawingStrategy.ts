@@ -1,7 +1,12 @@
 /**
- * Определяет стратегию отрисовки.
- * - `naive`: Отрисовка "в лоб" на каждом кадре.
- * - `path2d`: Использование кешированных объектов Path2D.
- * - `optimized`: Использование техник кеширования (offscreen canvas).
+ * Определяет доступные стратегии отрисовки.
+ * - `naive`: Прямая отрисовка геометрии на каждом кадре.
+ * - `path2d-translate`: Кеширование геометрии в Path2D (относительно 0,0) и перемещение контекста (`translate`).
+ * - `path2d-direct`: Кеширование геометрии в Path2D с абсолютными координатами для каждой звезды.
+ * - `optimized`: Кеширование растровых спрайтов и всего фона.
  */
-export type DrawingStrategy = "naive" | "path2d" | "optimized";
+export type DrawingStrategy =
+  | "naive"
+  | "path2d-translate"
+  | "path2d-direct"
+  | "optimized";
